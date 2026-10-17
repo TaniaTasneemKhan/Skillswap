@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'availability.dart';
+
 class UserProfile {
   final String uid;
   final String name;
@@ -9,6 +11,7 @@ class UserProfile {
   final List<String> skillsOffered;
   final List<String> skillsWanted;
   final bool profileComplete;
+  final List<AvailabilitySlot> availability; // saved separately via UserService
 
   const UserProfile({
     required this.uid,
@@ -19,6 +22,7 @@ class UserProfile {
     this.skillsOffered = const [],
     this.skillsWanted = const [],
     this.profileComplete = false,
+    this.availability = const [],
   });
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
@@ -30,6 +34,9 @@ class UserProfile {
         skillsOffered: List<String>.from(m['skillsOffered'] ?? const []),
         skillsWanted: List<String>.from(m['skillsWanted'] ?? const []),
         profileComplete: m['profileComplete'] ?? false,
+        availability: ((m['availability'] as List?) ?? const [])
+            .map((e) => AvailabilitySlot.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList(),
       );
 
   Map<String, dynamic> toMap() => {

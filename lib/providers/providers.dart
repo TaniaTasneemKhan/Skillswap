@@ -1,16 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/skill_listing.dart';
 import '../models/chat.dart';
 import '../models/exchange_request.dart';
+import '../models/session.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/listing_service.dart';
+import '../services/notification_service.dart';
 import '../services/request_service.dart';
+import '../services/session_service.dart';
 import '../services/user_service.dart';
 import '../utils/matcher.dart';
 
@@ -112,3 +116,33 @@ final chatsProvider = StreamProvider<List<ChatSummary>>((ref) {
 final messagesProvider = StreamProvider.autoDispose
     .family<List<ChatMessage>, String>(
         (ref, chatId) => ref.watch(chatServiceProvider).watchMessages(chatId));
+
+// ---- Module 4: availability, sessions, notifications ----
+final userProfileProvider = FutureProvider.autoDispose.family<UserProfile?, String>(
+    (ref, uid) => ref.watch(userServiceProvider).fetch(uid));
+
+final sessionServiceProvider =
+    Provider((ref) => SessionService(FirebaseFirestore.instance));
+
+final sessionsProvider = StreamProvider<List<Session>>((ref) {
+  final uid = ref.watch(authStateProvider).valueOrNull?.uid;
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(sessionServiceProvider).watchMine(uid);
+});
+
+/// Sessions someone proposed to me that I have not answered yet.
+final sessionsAwaitingCountProvider = Provider<int>((ref) {
+  final uid = ref.watch(authStateProvider).valueOrNull?.uid;
+  final now = DateTime.now();
+  return ref.watch(sessionsProvider).valueOrNull
+          ?.where((s) => s.status == 'proposed' && s.inviteeId == uid && s.endAt.isAfter(now))
+          .length ??
+      0;
+});
+
+/// Badge for the Swaps tab: pending requests + sessions awaiting my answer.
+final swapsBadgeCountProvider = Provider<int>((ref) =>
+    ref.watch(pendingIncomingCountProvider) + ref.watch(sessionsAwaitingCountProvider));
+
+final notificationServiceProvider = Provider((ref) =>
+    NotificationService(FirebaseMessaging.instance, FirebaseFirestore.instance));

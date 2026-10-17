@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../models/user_profile.dart';
 import '../../providers/providers.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/banner_header.dart';
+import '../../widgets/gradient_button.dart';
 import '../../widgets/skill_chip_input.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -24,7 +27,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   List<String> _offered = [];
   List<String> _wanted = [];
   String _photoUrl = '';
-  File? _newPhoto;
+  Uint8List? _newPhoto;
   bool _saving = false;
   String? _error;
 
@@ -49,7 +52,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _pickPhoto() async {
     final x = await ImagePicker()
         .pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 80);
-    if (x != null) setState(() => _newPhoto = File(x.path));
+    if (x == null) return;
+    final bytes = await x.readAsBytes();
+    if (mounted) setState(() => _newPhoto = bytes);
   }
 
   Future<void> _save() async {
@@ -84,92 +89,125 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
+  Widget _label(String t) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(t, style: const TextStyle(fontWeight: FontWeight.w600, color: Brand.ink)),
+      );
+
   @override
   Widget build(BuildContext context) {
-    final name = _name.text;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit profile' : 'Set up your profile'),
-        actions: [
-          if (!widget.isEditing)
-            TextButton(
-              onPressed: () => ref.read(authServiceProvider).signOut(),
-              child: const Text('Log out'),
+    final avatar = GestureDetector(
+      onTap: _pickPhoto,
+      child: Stack(
+        children: [
+          _newPhoto != null
+              ? CircleAvatar(radius: 52, backgroundImage: MemoryImage(_newPhoto!))
+              : UserAvatar(name: _name.text, photoUrl: _photoUrl, radius: 52),
+          const Positioned(
+            right: 0,
+            bottom: 0,
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Brand.primary,
+              child: Icon(Icons.camera_alt, size: 16, color: Colors.white),
             ),
+          ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _form,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: _pickPhoto,
-                    child: Stack(
+    );
+
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            BannerHeader(
+              avatar: avatar,
+              child: Row(
+                children: [
+                  if (widget.isEditing)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _newPhoto != null
-                            ? CircleAvatar(radius: 52, backgroundImage: FileImage(_newPhoto!))
-                            : UserAvatar(name: name, photoUrl: _photoUrl, radius: 52),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-                          ),
+                        Text(
+                          widget.isEditing ? 'Edit profile' : 'Set up your profile',
+                          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text('Tap the photo to change it',
+                            style: TextStyle(color: Colors.white70, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  if (!widget.isEditing)
+                    TextButton(
+                      onPressed: () => ref.read(authServiceProvider).signOut(),
+                      child: const Text('Log out', style: TextStyle(color: Colors.white)),
+                    ),
+                ],
+              ),
+            ),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                  child: Form(
+                    key: _form,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _label('Full name'),
+                        TextFormField(
+                          controller: _name,
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: (_) => setState(() {}),
+                          decoration: fieldDecoration(hint: 'e.g. Tania Khan'),
+                          validator: (v) => (v == null || v.trim().length < 2) ? 'Enter your name' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _label('Short bio'),
+                        TextFormField(
+                          controller: _bio,
+                          maxLines: 3,
+                          maxLength: 200,
+                          decoration: fieldDecoration(hint: 'Tell people a little about you', alignLabelWithHint: true),
+                        ),
+                        const SizedBox(height: 8),
+                        SkillChipInput(
+                          label: 'Skills I can teach',
+                          hint: 'e.g. Flutter, Guitar, Spanish',
+                          values: _offered,
+                          onChanged: (v) => setState(() => _offered = v),
+                        ),
+                        const SizedBox(height: 18),
+                        SkillChipInput(
+                          label: 'Skills I want to learn',
+                          hint: 'e.g. Photoshop, Public speaking',
+                          values: _wanted,
+                          onChanged: (v) => setState(() => _wanted = v),
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 12),
+                          Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        ],
+                        const SizedBox(height: 24),
+                        GradientButton(
+                          onPressed: _saving ? null : _save,
+                          loading: _saving,
+                          child: Text(widget.isEditing ? 'Save changes' : 'Finish setup'),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _name,
-                  textCapitalization: TextCapitalization.words,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(labelText: 'Full name'),
-                  validator: (v) => (v == null || v.trim().length < 2) ? 'Enter your name' : null,
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: _bio,
-                  maxLines: 3,
-                  maxLength: 200,
-                  decoration: const InputDecoration(labelText: 'Short bio', alignLabelWithHint: true),
-                ),
-                const SizedBox(height: 8),
-                SkillChipInput(
-                  label: 'Skills I can teach',
-                  hint: 'e.g. Flutter, Guitar, Spanish',
-                  values: _offered,
-                  onChanged: (v) => setState(() => _offered = v),
-                ),
-                const SizedBox(height: 18),
-                SkillChipInput(
-                  label: 'Skills I want to learn',
-                  hint: 'e.g. Photoshop, Public speaking',
-                  values: _wanted,
-                  onChanged: (v) => setState(() => _wanted = v),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                ],
-                const SizedBox(height: 22),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: _saving
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(widget.isEditing ? 'Save changes' : 'Finish setup'),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

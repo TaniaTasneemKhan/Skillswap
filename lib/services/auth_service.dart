@@ -1,14 +1,28 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final FirebaseAuth _auth;
   AuthService(this._auth);
 
-  Future<UserCredential> signUp(String email, String password) =>
-      _auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
+  /// "Remember me" (web only): keep the session after closing the browser,
+  /// or end it with the tab. Mobile always keeps the session.
+  Future<void> _persist(bool remember) async {
+    if (!kIsWeb) return;
+    try {
+      await _auth.setPersistence(remember ? Persistence.LOCAL : Persistence.SESSION);
+    } catch (_) {}
+  }
 
-  Future<UserCredential> signIn(String email, String password) =>
-      _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+  Future<UserCredential> signUp(String email, String password) async {
+    await _persist(true);
+    return _auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
+  }
+
+  Future<UserCredential> signIn(String email, String password, {bool remember = true}) async {
+    await _persist(remember);
+    return _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+  }
 
   Future<void> sendPasswordReset(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());

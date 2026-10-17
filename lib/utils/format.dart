@@ -15,3 +15,12 @@ String clockTime(DateTime? t) {
   final m = t.minute.toString().padLeft(2, '0');
   return '$h:$m';
 }
+
+const _wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/// "Sat, 24 Oct"
+String fmtDate(DateTime d) => '${_wd[d.weekday - 1]}, ${d.day} ${_mo[d.month - 1]}';
+
+/// "16:00–17:00"
+String fmtRange(DateTime s, DateTime e) => '${clockTime(s)}–${clockTime(e)}';

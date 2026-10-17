@@ -6,33 +6,37 @@ import '../../providers/providers.dart';
 import '../../utils/format.dart';
 import '../../widgets/user_avatar.dart';
 import '../chat/chat_screen.dart';
+import '../sessions/sessions_tab.dart';
 
 class RequestsScreen extends ConsumerWidget {
   const RequestsScreen({super.key});
 
+  Widget _badged(String text, int n) => Badge(
+        isLabelVisible: n > 0,
+        label: Text('$n'),
+        offset: const Offset(14, -6),
+        child: Text(text),
+      );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pending = ref.watch(pendingIncomingCountProvider);
+    final awaiting = ref.watch(sessionsAwaitingCountProvider);
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Swap requests'),
+          title: const Text('Swaps'),
           bottom: TabBar(tabs: [
-            Tab(
-              child: Badge(
-                isLabelVisible: pending > 0,
-                label: Text('$pending'),
-                offset: const Offset(14, -6),
-                child: const Text('Received'),
-              ),
-            ),
+            Tab(child: _badged('Received', pending)),
             const Tab(text: 'Sent'),
+            Tab(child: _badged('Sessions', awaiting)),
           ]),
         ),
         body: const TabBarView(children: [
           _RequestList(incoming: true),
           _RequestList(incoming: false),
+          SessionsTab(),
         ]),
       ),
     );

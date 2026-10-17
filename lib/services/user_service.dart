@@ -1,8 +1,9 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../models/availability.dart';
 import '../models/user_profile.dart';
 
 class UserService {
@@ -19,11 +20,19 @@ class UserService {
   Future<void> save(UserProfile p) =>
       _doc(p.uid).set(p.toMap(), SetOptions(merge: true));
 
-  Future<String> uploadPhoto(String uid, File file) async {
+  Future<String> uploadPhoto(String uid, Uint8List bytes) async {
     final ref = _storage.ref('profile_photos/$uid.jpg');
-    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
+    await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
     return ref.getDownloadURL();
   }
+
+  Future<UserProfile?> fetch(String uid) async {
+    final s = await _doc(uid).get();
+    return s.exists ? UserProfile.fromMap(s.id, s.data()!) : null;
+  }
+
+  Future<void> saveAvailability(String uid, List<AvailabilitySlot> slots) =>
+      _doc(uid).set({'availability': slots.map((s) => s.toMap()).toList()}, SetOptions(merge: true));
 
   /// Completed profiles of everyone except [myUid] (used by the matcher).
   Future<List<UserProfile>> fetchOthers(String myUid) async {

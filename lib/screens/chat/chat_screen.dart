@@ -5,6 +5,7 @@ import '../../models/chat.dart';
 import '../../providers/providers.dart';
 import '../../utils/format.dart';
 import '../../widgets/user_avatar.dart';
+import '../sessions/propose_session_screen.dart';
 
 /// Real-time one-to-one chat backed by chats/{chatId}/messages.
 class ChatScreen extends ConsumerStatefulWidget {
@@ -59,6 +60,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const SizedBox(width: 10),
           Expanded(child: Text(widget.otherName, overflow: TextOverflow.ellipsis)),
         ]),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.event),
+            tooltip: 'Schedule a session',
+            onPressed: () {
+              final otherId = widget.chatId.split('_').firstWhere((id) => id != me, orElse: () => '');
+              if (otherId.isEmpty) return;
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => ProposeSessionScreen(
+                  chatId: widget.chatId,
+                  otherId: otherId,
+                  otherName: widget.otherName,
+                  otherPhotoUrl: widget.otherPhotoUrl,
+                ),
+              ));
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
