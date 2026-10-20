@@ -5,6 +5,7 @@ import '../../models/chat.dart';
 import '../../providers/providers.dart';
 import '../../utils/format.dart';
 import '../../widgets/user_avatar.dart';
+import '../profile/public_profile_screen.dart';
 import '../sessions/propose_session_screen.dart';
 
 /// Real-time one-to-one chat backed by chats/{chatId}/messages.
@@ -55,11 +56,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: Row(children: [
-          UserAvatar(name: widget.otherName, photoUrl: widget.otherPhotoUrl, radius: 17),
-          const SizedBox(width: 10),
-          Expanded(child: Text(widget.otherName, overflow: TextOverflow.ellipsis)),
-        ]),
+        title: InkWell(
+          onTap: () {
+            final otherId = widget.chatId.split('_').firstWhere((id) => id != me, orElse: () => '');
+            if (otherId.isNotEmpty) openProfile(context, otherId);
+          },
+          child: Row(children: [
+            UserAvatar(name: widget.otherName, photoUrl: widget.otherPhotoUrl, radius: 17),
+            const SizedBox(width: 10),
+            Expanded(child: Text(widget.otherName, overflow: TextOverflow.ellipsis)),
+          ]),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.event),

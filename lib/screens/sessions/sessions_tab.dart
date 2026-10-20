@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../utils/format.dart';
 import '../../widgets/user_avatar.dart';
 import '../chat/chat_screen.dart';
+import 'rate_session_sheet.dart';
 
 /// Third tab of the Swaps screen: proposals, upcoming and past sessions.
 class SessionsTab extends ConsumerWidget {
@@ -134,10 +135,34 @@ class _SessionCard extends ConsumerWidget {
       }
       if (started) {
         buttons.add(FilledButton(
-          onPressed: () => _run(context, () => svc.complete(s, me), 'Marked as completed'),
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            try {
+              await svc.complete(s, me);
+            } catch (_) {
+              messenger.showSnackBar(
+                  const SnackBar(content: Text('Action failed. Please try again.')));
+              return;
+            }
+            if (context.mounted) showRateSessionSheet(context, s);
+          },
           child: const Text('Mark completed'),
         ));
       }
+    } else if (s.status == 'completed') {
+      final reviewed =
+          ref.watch(myReviewedSessionIdsProvider).valueOrNull?.contains(s.id) ?? false;
+      buttons.add(reviewed
+          ? const Chip(
+              avatar: Icon(Icons.check, size: 16),
+              label: Text('Reviewed'),
+              visualDensity: VisualDensity.compact,
+            )
+          : FilledButton.icon(
+              icon: const Icon(Icons.star, size: 18),
+              label: Text('Rate $name'),
+              onPressed: () => showRateSessionSheet(context, s),
+            ));
     }
     if (s.status != 'declined' && s.status != 'cancelled') {
       buttons.insert(

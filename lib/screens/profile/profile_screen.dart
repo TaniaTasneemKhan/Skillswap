@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/banner_header.dart';
+import '../../widgets/reviews_list.dart';
 import '../../widgets/skill_tag.dart';
+import '../../widgets/star_rating.dart';
 import '../../widgets/user_avatar.dart';
 import '../availability/availability_screen.dart';
 import 'profile_setup_screen.dart';
@@ -56,6 +58,9 @@ class ProfileScreen extends ConsumerWidget {
                     Text(p.name, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: Brand.ink)),
                     const SizedBox(height: 2),
                     Text(p.email, style: theme.textTheme.bodyMedium),
+                    const SizedBox(height: 6),
+                    if (p.ratingCount > 0) StarRow(rating: p.rating, size: 20),
+                    RatingBadge(p),
                     if (p.bio.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Text(p.bio, textAlign: TextAlign.center),
@@ -82,7 +87,9 @@ class ProfileScreen extends ConsumerWidget {
                             MaterialPageRoute(builder: (_) => const AvailabilityScreen())),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 24),
+                    ReviewsList(p.uid),
+                    const SizedBox(height: 12),
                     TextButton.icon(
                       icon: const Icon(Icons.logout),
                       label: const Text('Log out'),

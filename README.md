@@ -1,5 +1,5 @@
 # SkillSwap - Peer-to-Peer Skill Exchange App
-Zynvex Internship, Batch 4 - Modules 1-4
+Zynvex Internship, Batch 4 - Modules 1-5
 
 ## Module 1 - User Authentication & Profile Setup
 - Email/password sign up, login, logout, password reset (Firebase Auth) with validation and friendly errors
@@ -50,6 +50,17 @@ Limitation: availability is treated as local time, so it assumes both partners a
 5. iOS: upload your APNs key in Firebase console -> Project settings -> Cloud Messaging, and enable Push Notifications + Background Modes in Xcode.
 Without the functions deployed, everything else still works; only the push alerts are missing.
 
+## Module 5 - Ratings, Reputation & Final Polish
+- After a session is marked completed, each partner can rate the other (1-5 stars + optional review)
+- Reputation: average rating and review count on profiles, match cards and a new public profile page
+- Anti-tampering: the review and the rating totals are written in one transaction and verified by Firestore rules
+  (only completed sessions, only participants, one review per session, totals can only grow by that review's rating)
+- Polish: Browse hero with search and popular skills, readable max-width layout on big screens,
+  coloured skill tags, tappable names/avatars that open a profile
+- Bug fixes: keyboard no longer covers the request form; listing posting shows real errors and clears filters;
+  broken default widget test replaced
+- Testing: unit + widget tests and a manual checklist in `TESTING.md`
+
 ## Setup
 1. Create a Firebase project; enable **Authentication -> Email/Password**, **Cloud Firestore**, **Storage**.
 2. `flutter pub get`
@@ -69,7 +80,7 @@ lib/
   services/                  Auth, User(+Storage), Listing
   providers/providers.dart   Riverpod providers (auth, profile, listings, filters, matches)
   utils/matcher.dart         matching algorithm
-  screens/{auth,profile,home,skills,matches,requests,chat,availability,sessions}
+  screens/{auth,profile,home,skills,matches,requests,chat,availability,sessions}  (public_profile_screen, rate_session_sheet added in Module 5)
 functions/                   Cloud Functions (push notifications + reminders)
   widgets/                   UserAvatar, SkillChipInput
 ```

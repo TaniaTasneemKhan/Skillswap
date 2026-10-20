@@ -12,6 +12,8 @@ class UserProfile {
   final List<String> skillsWanted;
   final bool profileComplete;
   final List<AvailabilitySlot> availability; // saved separately via UserService
+  final int ratingSum; // reputation totals, written only by ReviewService
+  final int ratingCount;
 
   const UserProfile({
     required this.uid,
@@ -23,7 +25,12 @@ class UserProfile {
     this.skillsWanted = const [],
     this.profileComplete = false,
     this.availability = const [],
+    this.ratingSum = 0,
+    this.ratingCount = 0,
   });
+
+  /// Average star rating (0 when nobody has rated yet).
+  double get rating => ratingCount == 0 ? 0 : ratingSum / ratingCount;
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
         uid: uid,
@@ -37,6 +44,8 @@ class UserProfile {
         availability: ((m['availability'] as List?) ?? const [])
             .map((e) => AvailabilitySlot.fromMap(Map<String, dynamic>.from(e as Map)))
             .toList(),
+        ratingSum: (m['ratingSum'] as num?)?.toInt() ?? 0,
+        ratingCount: (m['ratingCount'] as num?)?.toInt() ?? 0,
       );
 
   Map<String, dynamic> toMap() => {

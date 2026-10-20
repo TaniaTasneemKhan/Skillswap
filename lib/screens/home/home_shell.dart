@@ -172,7 +172,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           children: [
             _sidebar(badge),
             const VerticalDivider(width: 1),
-            Expanded(child: body),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: body,
+                ),
+              ),
+            ),
           ],
         ),
       );

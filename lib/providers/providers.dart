@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/skill_listing.dart';
 import '../models/chat.dart';
 import '../models/exchange_request.dart';
+import '../models/review.dart';
 import '../models/session.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
@@ -14,6 +15,7 @@ import '../services/chat_service.dart';
 import '../services/listing_service.dart';
 import '../services/notification_service.dart';
 import '../services/request_service.dart';
+import '../services/review_service.dart';
 import '../services/session_service.dart';
 import '../services/user_service.dart';
 import '../utils/matcher.dart';
@@ -146,3 +148,21 @@ final swapsBadgeCountProvider = Provider<int>((ref) =>
 
 final notificationServiceProvider = Provider((ref) =>
     NotificationService(FirebaseMessaging.instance, FirebaseFirestore.instance));
+
+// ---- Module 5: reviews and reputation ----
+final reviewServiceProvider =
+    Provider((ref) => ReviewService(FirebaseFirestore.instance));
+
+final reviewsForUserProvider = StreamProvider.autoDispose.family<List<Review>, String>(
+    (ref, uid) => ref.watch(reviewServiceProvider).watchFor(uid));
+
+/// Sessions I have already reviewed (hides the "Rate" button).
+final myReviewedSessionIdsProvider = StreamProvider<Set<String>>((ref) {
+  final uid = ref.watch(authStateProvider).valueOrNull?.uid;
+  if (uid == null) return Stream.value(const <String>{});
+  return ref.watch(reviewServiceProvider).watchGivenSessionIds(uid);
+});
+
+/// Live profile of any member (rating updates appear immediately).
+final publicProfileProvider = StreamProvider.autoDispose.family<UserProfile?, String>(
+    (ref, uid) => ref.watch(userServiceProvider).watch(uid));

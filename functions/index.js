@@ -125,3 +125,12 @@ exports.sessionReminders = onSchedule('every 5 minutes', async () => {
     await doc.ref.update({ reminderSent: true });
   }
 });
+
+// ---- reviews (Module 5) ----
+exports.onReviewCreated = onDocumentCreated('reviews/{id}', async (event) => {
+  const r = event.data && event.data.data();
+  if (!r) return;
+  await notify(r.revieweeId, 'New review',
+    `${r.reviewerName} rated you ${r.rating}/5 for "${r.topic}"`,
+    { type: 'session', sessionId: r.sessionId });
+});

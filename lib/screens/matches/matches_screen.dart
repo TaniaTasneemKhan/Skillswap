@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
+import '../../theme/app_theme.dart';
 import '../../utils/matcher.dart';
 import '../../widgets/request_button.dart';
+import '../../widgets/skill_tag.dart';
+import '../../widgets/star_rating.dart';
 import '../../widgets/user_avatar.dart';
+import '../profile/public_profile_screen.dart';
 
 class MatchesScreen extends ConsumerWidget {
   const MatchesScreen({super.key});
@@ -56,43 +60,56 @@ class _MatchCard extends ConsumerWidget {
     final u = m.user;
     final scheme = Theme.of(context).colorScheme;
     return Card(
+      color: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Brand.border.withOpacity(0.6)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                UserAvatar(name: u.name, photoUrl: u.photoUrl, radius: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(u.name, style: Theme.of(context).textTheme.titleMedium),
-                      if (u.bio.isNotEmpty)
-                        Text(u.bio, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => openProfile(context, u.uid),
+              child: Row(
+                children: [
+                  UserAvatar(name: u.name, photoUrl: u.photoUrl, radius: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(u.name, style: Theme.of(context).textTheme.titleMedium),
+                        RatingBadge(u),
+                        if (u.bio.isNotEmpty)
+                          Text(u.bio, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
                   ),
-                ),
-                if (m.isMutual)
-                  Chip(
-                    avatar: const Icon(Icons.swap_horiz, size: 16),
-                    label: const Text('Mutual'),
-                    backgroundColor: scheme.primaryContainer,
-                    visualDensity: VisualDensity.compact,
-                  ),
-              ],
+                  if (m.isMutual)
+                    Chip(
+                      avatar: const Icon(Icons.swap_horiz, size: 16),
+                      label: const Text('Mutual'),
+                      backgroundColor: scheme.primaryContainer,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                ],
+              ),
             ),
             if (m.theyCanTeachYou.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text('Can teach you', style: Theme.of(context).textTheme.labelLarge),
-              Wrap(spacing: 6, children: [for (final s in m.theyCanTeachYou) Chip(label: Text(s), visualDensity: VisualDensity.compact)]),
+              const SizedBox(height: 6),
+              Wrap(spacing: 6, runSpacing: 6, children: [for (final s in m.theyCanTeachYou) SkillTag(s)]),
             ],
             if (m.youCanTeachThem.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
               Text('Wants to learn from you', style: Theme.of(context).textTheme.labelLarge),
-              Wrap(spacing: 6, children: [for (final s in m.youCanTeachThem) Chip(label: Text(s), visualDensity: VisualDensity.compact)]),
+              const SizedBox(height: 6),
+              Wrap(spacing: 6, runSpacing: 6, children: [for (final s in m.youCanTeachThem) SkillTag(s, learn: true)]),
             ],
             const SizedBox(height: 10),
             Align(

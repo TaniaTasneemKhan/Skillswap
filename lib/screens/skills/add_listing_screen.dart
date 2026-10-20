@@ -28,8 +28,13 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
     final me = ref.read(profileProvider).valueOrNull;
-    if (me == null) return;
+    if (me == null) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Your profile is still loading. Try again in a moment.')));
+      return;
+    }
     setState(() => _saving = true);
     try {
       await ref.read(listingServiceProvider).add(SkillListing(
@@ -42,12 +47,18 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
             type: _type,
             description: _desc.text.trim(),
           ));
+      // Clear filters so the new listing is visible on Browse.
+      ref.read(typeFilterProvider.notifier).state = null;
+      ref.read(categoryFilterProvider.notifier).state = null;
       if (mounted) Navigator.of(context).pop();
-    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Listing posted')));
+    } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not save listing. Try again.')));
+        messenger.showSnackBar(SnackBar(
+          content: Text('Could not post listing: $e'),
+          duration: const Duration(seconds: 8),
+        ));
       }
     }
   }
